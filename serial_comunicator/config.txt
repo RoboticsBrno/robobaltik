@@ -1,0 +1,4 @@
+port=COM14
+baudrate=115200
+timeout  =    2
+endline=\n
