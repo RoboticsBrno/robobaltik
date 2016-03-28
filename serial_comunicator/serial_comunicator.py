@@ -1,7 +1,8 @@
 ﻿#umi vycist port, baudrate, timeout a endline z dokumentu .txt a endline pridava na konec dat
-#nepokracuje, pokud tan neni =, nepokracuje, pokud to, co a byt cislo neni cislo 
+#nepokracuje, pokud tan neni =
+#nepokracuje, pokud to, co ma byt cislo neni cislo 
 #muze byt pred a za = mezera (i vice)
-#nepokracuje, pokud pred nebo za = neni zadny data_dictionary
+#nepokracuje, pokud pred nebo za = neni zadny configuration
 import serial, sys, os
 
 def escape_sequention(data):
@@ -29,13 +30,13 @@ def escape_sequention(data):
 
         elif data[i] == "\\" and i < (lenght-2) and data[i+1] == "x" and data[i+2] in hex and data[i+3] in hex:
             hex_number = ""
-            hex_number[0] = chr(int(data[i+2:i+4], 16))
+            hex_number = chr(int(data[i+2:i+4], 16))
             data1 += hex_number
             i += 4
 
         elif data[i] == "\\" and i < (lenght-2) and data[i+1] in octal and data[i+2] in octal and data[i+3] in octal:
             octal_number = ""
-            octal_number[0] = chr(int(data[i+1:i+4], 8))
+            octal_number = chr(int(data[i+1:i+4], 8))
             data1 += octal_number
             i += 4
 
@@ -54,8 +55,8 @@ def to_number(number, numer_type):
         print "neni to cislo"
         return -1
 
-def data_processing():
-    data_dictionary = {}#nejak inteligentne pojmenovat
+def configuration_processing():
+    configuration = {}#nejak inteligentne pojmenovat
     try:
         with open(os.path.join(os.path.dirname(__file__), 'config.txt')) as f:
             for i in range(4):
@@ -77,57 +78,44 @@ def data_processing():
                     return -1
 
                 if "#" in cmd[-1]:
-                    i = 0
-                    cmd2 = ""
-                    while i < len(cmd[-1]):
-                        if cmd[-1][i] == "#":
-                            break
-                        cmd2 += cmd[-1][i]
-                        i += 1
+                    cmd2 = cmd[-1].split("#")
+                    cmd2 = cmd2[0]
                     cmd[-1] = cmd2
     
-                data_dictionary[cmd[0]] = cmd[-1] 
+                configuration[cmd[0]] = cmd[-1] 
     
     except IOError:
         print "nelze otevrit soubor"
         return -1
        
-    print data_dictionary
-    return data_dictionary
+    print "configuration processing", configuration
+    return configuration
 
-def communication(data):
-    data_dictionary = data_processing() 
-    
-    if "port" in data_dictionary:
-        cmd = data_dictionary["port"] 
+def communication(data, configuration): 
+    data = ' '.join(data[1:]) 
+    data1 = escape_sequention(data)
+       
+    if "port" in configuration:
+        cmd = configuration["port"] 
       
     else:
         print "musis zadat port!"
         return -1 
     
-    if "baudrate" in data_dictionary:
-        v = data_dictionary["baudrate"]
-        v = to_number(v, int)
+    v = 115200
+    if "baudrate" in configuration:
+        v = configuration["baudrate"]
+        v = to_number(v, int)     
 
-    else:
-        v = 115200
-
-    if "endline" in data_dictionary:
-        endline = data_dictionary["endline"]
+    if "endline" in configuration:
+        endline = configuration["endline"]
         data += endline
 
-    else:
-        endline = ""
-
-    if "timeout" in data_dictionary:
-        wait = data_dictionary["timeout"]  
+    wait = None
+    if "timeout" in configuration:
+        wait = configuration["timeout"]  
         wait = to_number(wait, float)
 
-    else:
-        wait = None
-
-    data = ' '.join(data[1:]) 
-    data1 = escape_sequention(data)
     return v
     ser = serial.Serial(cmd, v, timeout = wait)#pythonhosted.org/pyserial/pyserial_api.html
     x = ser.write(data1)
@@ -138,7 +126,8 @@ def communication(data):
 if __name__ == '__main__':
     #data = sys.argv
     data = str(raw_input('Zadejte data '))
-    end = communication(data)  
+    configuration = configuration_processing() 
+    end = communication(data, configuration)  
     print end
     os.system("pause")
     exit(end)
