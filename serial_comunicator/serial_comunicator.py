@@ -47,18 +47,17 @@ def escape_sequention(data):
     return data1
 
 def to_number(number, numer_type):
-    #print number
     try:
         return numer_type(number)
 
-    except ValueError:
-        print "neni to cislo"
+    except ValueError as e:
+        print e.message
         return -1
 
 def configuration_processing():
-    configuration = {}#nejak inteligentne pojmenovat
+    configuration = {}
     try:
-        with open(os.path.join(os.path.dirname(__file__), 'config.txt')) as f:
+        with open(os.path.join(os.path.dirname(__file__), 'config.txt'), "r") as f:
             for line in f:                 
                 if "#" in line:
                     line = line.split("#")
@@ -107,32 +106,69 @@ def communication(data, configuration):
         v = configuration["baudrate"]
         v = to_number(v, int)     
 
+    endline = ""
     if "endline" in configuration:
         endline = configuration["endline"]
-        data += endline
+        endline = escape_sequention(endline)
 
     wait = None
     if "timeout" in configuration:
         wait = configuration["timeout"]  
         wait = to_number(wait, float)
 
-    data1 = escape_sequention(data)
+    readbuf = 1024
+    if "readbuf" in configuration:
+        readbuf = configuration["readbuf"]
+        readbuf = to_number(readbuf, int)
 
+    readfile = "received_data.txt"
+    if "readfile" in configuration:
+        readfile = configuration["readfile"]
+
+    readback = False
+    if "readback" in configuration:
+        readback = configuration["readback"]
+        if readback.lower() in ("true", "1"):
+            readback = True
+        elif readback.lower() in ("false", "0"):  
+            readback = False
+        elif readback.split()[0].lower() == "trigger":
+            readback = readback.split(None, 1)[-1]
+            
+        else:
+            print "readback must be 0/False or 1/True no", readback
+            return -1
+
+    data1 = escape_sequention(data)
+    readback = (isinstance(readback, bool) and readback) or (isinstance(readback, str) and readback == data1[-len(readback):])
     try:
         if "address" in configuration:
             address = configuration["address"]
             port = to_number(port, int)
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(wait)
             s.connect((address, port))
-            x = s.send(data1)
+            x = s.send(data1 + endline)
+            if readback: 
+                try:
+                    received = ""
+                    while True:
+                        received += s.recv(readbuf)
+                except socket.timeout:
+                    pass
             s.close()
-        
-
-        #return v
+  
         else:
-            ser = serial.Serial(port, v, timeout = wait)#pythonhosted.org/pyserial/pyserial_api.html
-            x = ser.write(data1)
+            ser = serial.Serial(port, v, timeout = wait)
+            x = ser.write(data1 + endline)
+            if readback:
+                received = ser.read(readbuf)
             ser.close()
+        if readback:
+            if not os.path.isabs(readfile):
+                readfile = os.path.join(os.path.dirname(__file__), readfile)
+            with open(readfile, "w") as f:
+                f.write(received)
 
     except serial.serialutil.SerialException as e:
         print e.message  
@@ -142,6 +178,11 @@ def communication(data, configuration):
         print '{} ({})'.format(e.strerror, e.errno)
 
         return -1
+
+    except IOError as e:
+        print e.message
+        return -1 
+
     
 
     print 'closed', x
@@ -151,7 +192,4 @@ if __name__ == '__main__':
     data = sys.argv
     #data = raw_input('Zadejte data: ')
     configuration = configuration_processing() 
-    end = communication(data, configuration)  
-    #print end
-    #os.system("pause")
     exit(end)
