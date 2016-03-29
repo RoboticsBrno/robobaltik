@@ -1,4 +1,6 @@
-port=COM14
+#Port=COM12
 baudrate=115200#prenosova rychlost
-timeout  =    2
-endline==
+TIMEOUT  =    2
+Endline=\n
+address=localhost
+port=12345
