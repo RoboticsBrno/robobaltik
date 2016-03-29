@@ -4,3 +4,6 @@ TIMEOUT  =    2
 Endline=\n
 address=localhost
 port=12345
+readback=trigger ?
+readbuf=1024
+readfile=received_data.txt
