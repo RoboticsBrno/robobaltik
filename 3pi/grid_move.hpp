@@ -89,8 +89,8 @@ private:
 		const float v = (c_p2v_k * m_motor_speed + c_p2v_q) / 1000; // because of ms
 		m_vertical_time = c_cell_height / v;
 		m_horizontal_time = c_cell_width / v;
-		m_turn_time = c_wheel_distance * M_PI_4 / (c_p2v_k * 25 + c_p2v_q) / 1000;
-		//format(uart, "speed % \n\ts: % \n\tv: % \n\th: % \n\tt: % \n") % s % m_motor_speed % m_vertical_time % m_horizontal_time % m_turn_time;
+		m_turn_time = c_wheel_distance * M_PI_4 / ((c_p2v_k * 25 + c_p2v_q) / 1000);
+		format(uart, "speed % \n\ts: % \n\tv: % \n\th: % \n\tt: % \n") % s % m_motor_speed % m_vertical_time % m_horizontal_time % m_turn_time;
 	}
 	coord_t m_x;
 	coord_t m_y;
