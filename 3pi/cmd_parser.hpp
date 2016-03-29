@@ -13,7 +13,8 @@ public:
 		switch(ch)
 		{
 			case '\n':
-				uart.write('\n');
+				//uart.write('\n');
+				//disp.write('\n');
 				parse();
 				clear();
 				break;
@@ -22,22 +23,26 @@ public:
 				if(!m_cmd.empty())
 				{
 					m_cmd.erase(m_cmd.end() - 1);
-					uart.write('\b');
+					//uart.write('\b');
+					//disp.write('\b');
 				}
 				else
 				{
-					uart.write('\a');
+					//uart.write('\a');
+					disp.write('\a');
 				}
 				break;
 			default:
 				if(m_cmd.size() < m_cmd.max_size())
 				{
 					m_cmd += ch;
-					uart.write(ch);
+					//uart.write(ch);
+					//disp.write(ch);
 				}
 				else
 				{
-					uart.write('\a');
+					//uart.write('\a');
+					disp.write('\a');
 				}
 				break;
 		}
