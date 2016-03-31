@@ -52,7 +52,7 @@ def to_number(number, numer_type):
 
     except ValueError as e:
         print e.message
-        return -1
+        return None
 
 def configuration_processing(path):
     configuration = {}
@@ -104,7 +104,9 @@ def communication(data, configuration, def_path):
     v = 115200
     if "baudrate" in configuration:
         v = configuration["baudrate"]
-        v = to_number(v, int)     
+        v = to_number(v, int) 
+        if v == None:
+            return -1    
 
     endline = ""
     if "endline" in configuration:
@@ -115,11 +117,15 @@ def communication(data, configuration, def_path):
     if "timeout" in configuration:
         wait = configuration["timeout"]  
         wait = to_number(wait, float)
+        if wait == None:
+            return -1
 
     readbuf = 1024
     if "readbuf" in configuration:
         readbuf = configuration["readbuf"]
         readbuf = to_number(readbuf, int)
+        if readbuf == None:
+            return -1
 
     readfile = "received_data.txt"
     if "readfile" in configuration:
@@ -145,6 +151,8 @@ def communication(data, configuration, def_path):
         if "address" in configuration:
             address = configuration["address"]
             port = to_number(port, int)
+            if port == None:
+                return -1
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.settimeout(wait)
             s.connect((address, port))
@@ -190,5 +198,7 @@ def communication(data, configuration, def_path):
 
 if __name__ == '__main__':
     configuration = configuration_processing(os.path.join(os.path.dirname(sys.argv[0]), 'config.txt'))
+    if configuration == -1:
+        sys.exit(configuration)
     end = communication(sys.argv[1:], configuration, os.path.dirname(sys.argv[0]))
     sys.exit(end)
