@@ -56,7 +56,7 @@ private:
 	
 	void parse()
 	{
-		string cmd = get_arg();
+		string cmd = pop_arg();
 		if(cmd.compare_spgm(PSTR("disp")) == 0)
 		{
 			send(disp, m_cmd.substr(m_rptr));
@@ -214,6 +214,30 @@ private:
 		{
 			sw_rst();
 		}
+		else if(cmd.compare_spgm(PSTR("time_horizontal")) == 0)
+		{
+			uint32_t t = get_num_opt(0);
+			if(t)
+				grid_move.set_horizonatal_time(t);
+			else
+				format_spgm(uart, PSTR("% \n")) % grid_move.get_horizonatal_time();
+		}
+		else if(cmd.compare_spgm(PSTR("time_vertical")) == 0)
+		{
+			uint32_t t = get_num_opt(0);
+			if(t)
+				grid_move.set_vertical_time(t);
+			else
+				format_spgm(uart, PSTR("% \n")) % grid_move.get_vertical_time();
+		}
+		else if(cmd.compare_spgm(PSTR("time_turn")) == 0)
+		{
+			uint32_t t = get_num_opt(0);
+			if(t)
+				grid_move.set_turn_time(t);
+			else
+				format_spgm(uart, PSTR("% \n")) % grid_move.get_turn_time();
+		}
 // 		else if(cmd.compare_spgm(PSTR("time")) == 0)
 // 		{
 // 			grid_move_t::speed_t s = 0;
@@ -229,7 +253,7 @@ private:
 		}
 	}
 	
-	string get_arg()
+	string pop_arg()
 	{
 		string::size_t stop = m_cmd.find_first_of(' ', m_rptr);
 		string::size_t start = m_rptr;
@@ -237,10 +261,17 @@ private:
 		return m_cmd.substr(start, stop - start);
 	}
 	
+	string top_arg()
+	{
+		string::size_t stop = m_cmd.find_first_of(' ', m_rptr);
+		string::size_t start = m_rptr;
+		return m_cmd.substr(start, stop - start);
+	}
+	
 	template <class Integer>
 	bool get_num(Integer& n)
 	{
-		string s = get_arg();
+		string s = pop_arg();
 		if(!avrlib::string2number(s, n))
 		{
 			format_spgm(uart, PSTR("Not a number: input[% :% ] = \"% \"\n")) % (m_rptr - s.length()) % m_rptr % s;
@@ -253,7 +284,7 @@ private:
 	Integer get_num_opt(const Integer& Default)
 	{
 		Integer n = 0;
-		if(avrlib::string2number(get_arg(), n))
+		if(avrlib::string2number(pop_arg(), n))
 			return n;
 		return Default;
 	}

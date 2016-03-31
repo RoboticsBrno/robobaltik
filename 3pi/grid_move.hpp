@@ -71,6 +71,14 @@ public:
 // 		m_turn_time = msec(500) * (s + 1);
 // 		format(uart, "t = % \n") % m_vertical_time;
 // 	}
+
+	uint32_t get_horizonatal_time() const { return m_horizontal_time; }
+	uint32_t get_vertical_time() const { return m_turn_time; }
+	uint32_t get_turn_time() const { return m_turn_time; }
+		
+	void set_horizonatal_time(const uint32_t& t) { m_horizontal_time = t; }
+	void set_vertical_time(const uint32_t& t) { m_vertical_time = t; }
+	void set_turn_time(const uint32_t& t) { m_turn_time = t; }
 	
 	static const coord_t c_grid_width;
 	static const coord_t c_grid_height;
@@ -90,7 +98,7 @@ private:
 		m_vertical_time = c_cell_height / v;
 		m_horizontal_time = c_cell_width / v;
 		m_turn_time = c_wheel_distance * M_PI_4 / ((c_p2v_k * 25 + c_p2v_q) / 1000);
-		format(uart, "speed % \n\ts: % \n\tv: % \n\th: % \n\tt: % \n") % s % m_motor_speed % m_vertical_time % m_horizontal_time % m_turn_time;
+		//format(uart, "speed % \n\ts: % \n\tv: % \n\th: % \n\tt: % \n") % s % m_motor_speed % m_vertical_time % m_horizontal_time % m_turn_time;
 	}
 	coord_t m_x;
 	coord_t m_y;
