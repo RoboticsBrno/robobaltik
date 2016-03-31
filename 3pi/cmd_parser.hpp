@@ -159,6 +159,10 @@ private:
 			}
 			uart.write('\n');
 		}
+		else if(cmd.compare_spgm(PSTR("line_position")) == 0)
+		{
+			format_spgm(uart, PSTR("% \n")) % pi::getLinePos();
+		}
 		else if(cmd.compare_spgm(PSTR("resetCalibration")) == 0)
 		{
 			pi::resetCalibration();
