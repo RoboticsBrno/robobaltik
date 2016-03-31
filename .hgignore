@@ -4,3 +4,7 @@ Debug
 Release
 *.vs
 *.pyc
+build
+dist
+*.sdf
+*.opensdf

@@ -54,10 +54,10 @@ def to_number(number, numer_type):
         print e.message
         return -1
 
-def configuration_processing():
+def configuration_processing(path):
     configuration = {}
     try:
-        with open(os.path.join(os.path.dirname(__file__), 'config.txt'), "r") as f:
+        with open(path, "r") as f:
             for line in f:                 
                 if "#" in line:
                     line = line.split("#")
@@ -85,14 +85,14 @@ def configuration_processing():
     
                 configuration[cmd2[0]] = cmd2[-1] 
     
-    except IOError:
-        print "nelze otevrit soubor"
+    except IOError as e:
+        print "nelze otevrit soubor", path
         return -1
 
     return configuration
 
-def communication(data, configuration): 
-    data = ' '.join(data[1:])     
+def communication(data, configuration, def_path): 
+    data = ' '.join(data)    
 
     if "port" in configuration:
         port = configuration["port"] 
@@ -166,7 +166,7 @@ def communication(data, configuration):
             ser.close()
         if readback:
             if not os.path.isabs(readfile):
-                readfile = os.path.join(os.path.dirname(__file__), readfile)
+                readfile = os.path.join(os.path.dirname(def_path), readfile)
             with open(readfile, "w") as f:
                 f.write(received)
 
@@ -189,7 +189,6 @@ def communication(data, configuration):
     return x
 
 if __name__ == '__main__':
-    data = sys.argv
-    #data = raw_input('Zadejte data: ')
-    configuration = configuration_processing() 
-    exit(end)
+    configuration = configuration_processing(os.path.join(os.path.dirname(sys.argv[0]), 'config.txt'))
+    end = communication(sys.argv[1:], configuration, os.path.dirname(sys.argv[0]))
+    sys.exit(end)
