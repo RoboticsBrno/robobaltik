@@ -3,7 +3,7 @@
 #nepokracuje, pokud to, co ma byt cislo neni cislo 
 #muze byt pred a za = mezera (i vice)
 #nepokracuje, pokud pred nebo za = neni zadny configuration
-import serial, sys, os, socket
+import serial, sys, os, socket, time
 
 def escape_sequention(data):
     escape_sequences = {"a" : "\a",
@@ -92,7 +92,18 @@ def configuration_processing(path):
     return configuration
 
 def communication(data, configuration, def_path): 
-    data = ' '.join(data)    
+    data = ' '.join(data) 
+    
+    parsing_escape_sequences = True
+    if "parsing_escape_sequences" in configuration:
+        parsing_escape_sequences = configuration["parsing_escape_sequences"]
+        if parsing_escape_sequences.lower() in ("true", "1"):
+            parsing_escape_sequences = True
+        elif parsing_escape_sequences.lower() in ("false", "0"):  
+            parsing_escape_sequences = False
+        else:
+            print "parsing_escape_sequences must be 0/False or 1/True, no", parsing_escape_sequences
+            return -1
 
     if "port" in configuration:
         port = configuration["port"] 
@@ -111,7 +122,8 @@ def communication(data, configuration, def_path):
     endline = ""
     if "endline" in configuration:
         endline = configuration["endline"]
-        endline = escape_sequention(endline)
+        if parsing_escape_sequences == True:
+            endline = escape_sequention(endline)
 
     wait = None
     if "timeout" in configuration:
@@ -142,10 +154,27 @@ def communication(data, configuration, def_path):
             readback = readback.split(None, 1)[-1]
             
         else:
-            print "readback must be 0/False or 1/True no", readback
+            print "readback must be 0/False or 1/True or 'trigger' follow by some char or string, no", readback
             return -1
 
-    data1 = escape_sequention(data)
+    received_delimiter = None  
+    if "received_delimiter" in configuration:
+        received_delimiter = configuration["received_delimiter"]
+        if parsing_escape_sequences == True:
+            received_delimiter = escape_sequention(received_delimiter)
+
+    exclude_delimiter = False
+    if "exclude_delimiter" in configuration:
+        exclude_delimiter = configuration["exclude_delimiter"]
+        if exclude_delimiter.lower() in ("true", "1"):
+            exclude_delimiter = True
+        elif exclude_delimiter.lower() in ("false", "0"):  
+            exclude_delimiter = False
+        else:
+            print "exclude delimiter must be 0/False or 1/True no", exclude_delimiter
+            return -1
+    if parsing_escape_sequences == True:
+        data1 = escape_sequention(data)
     readback = (isinstance(readback, bool) and readback) or (isinstance(readback, str) and readback == data1[-len(readback):])
     try:
         if "address" in configuration:
@@ -160,18 +189,46 @@ def communication(data, configuration, def_path):
             if readback: 
                 try:
                     received = ""
-                    while True:
+                    check_time = time.clock()
+                    check_time = check_time + wait
+
+                    while time.clock() < check_time:
                         received += s.recv(readbuf)
+                        if received_delimiter != None:
+                            index = received.find(exclude_delimiter)
+                            if index != -1:
+                                if not exclude_delimiter:
+                                    received = received[:(index+len(received_delimiter))]
+                                else:
+                                    received = received[:index]
+                                break
+                    
                 except socket.timeout:
                     pass
             s.close()
-  
+        
         else:
             ser = serial.Serial(port, v, timeout = wait)
             x = ser.write(data1 + endline)
-            if readback:
-                received = ser.read(readbuf)
-            ser.close()
+            received = ""
+            if readback:     
+                if received_delimiter == None:
+                    received = ser.read(readbuf)
+                else:
+                    length = len(received_delimiter)
+                    check_time = time.clock()
+                    check_time = check_time + wait
+                    break_by_delimiter = False
+                    while time.clock() < check_time:
+                        received += ser.read()            
+                        if received[-length:] == received_delimiter:
+                            break_by_delimiter = True
+                            break
+                    if exclude_delimiter and break_by_delimiter:
+                        recieved = received[:(-length)]
+                      
+                       
+            ser.close()  
         if readback:
             if not os.path.isabs(readfile):
                 readfile = os.path.join(os.path.dirname(def_path), readfile)
@@ -190,8 +247,6 @@ def communication(data, configuration, def_path):
     except IOError as e:
         print e.message
         return -1 
-
-    
 
     print 'closed', x
     return x
