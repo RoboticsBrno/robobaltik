@@ -92,7 +92,18 @@ def configuration_processing(path):
     return configuration
 
 def communication(data, configuration, def_path): 
-    data = ' '.join(data)    
+    data = ' '.join(data) 
+    
+    parsing_escape_sequences = True
+    if "parsing_escape_sequences" in configuration:
+        parsing_escape_sequences = configuration["parsing_escape_sequences"]
+        if parsing_escape_sequences.lower() in ("true", "1"):
+            parsing_escape_sequences = True
+        elif parsing_escape_sequences.lower() in ("false", "0"):  
+            parsing_escape_sequences = False
+        else:
+            print "parsing_escape_sequences must be 0/False or 1/True, no", parsing_escape_sequences
+            return -1
 
     if "port" in configuration:
         port = configuration["port"] 
@@ -111,7 +122,8 @@ def communication(data, configuration, def_path):
     endline = ""
     if "endline" in configuration:
         endline = configuration["endline"]
-        endline = escape_sequention(endline)
+        if parsing_escape_sequences == True:
+            endline = escape_sequention(endline)
 
     wait = None
     if "timeout" in configuration:
@@ -142,13 +154,14 @@ def communication(data, configuration, def_path):
             readback = readback.split(None, 1)[-1]
             
         else:
-            print "readback must be 0/False or 1/True or 'trigger' follow by some char or string", readback
+            print "readback must be 0/False or 1/True or 'trigger' follow by some char or string, no", readback
             return -1
 
     received_delimiter = None  
     if "received_delimiter" in configuration:
         received_delimiter = configuration["received_delimiter"]
-        received_delimiter = escape_sequention(received_delimiter)
+        if parsing_escape_sequences == True:
+            received_delimiter = escape_sequention(received_delimiter)
 
     exclude_delimiter = False
     if "exclude_delimiter" in configuration:
@@ -160,8 +173,8 @@ def communication(data, configuration, def_path):
         else:
             print "exclude delimiter must be 0/False or 1/True no", exclude_delimiter
             return -1
-
-    data1 = escape_sequention(data)
+    if parsing_escape_sequences == True:
+        data1 = escape_sequention(data)
     readback = (isinstance(readback, bool) and readback) or (isinstance(readback, str) and readback == data1[-len(readback):])
     try:
         if "address" in configuration:

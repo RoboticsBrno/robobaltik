@@ -8,4 +8,5 @@ readback=1
 readbuf=1024
 readfile=received_data.txt
 received_delimiter=\n
-exclude_delimiter=True#bez received_delimiter
+exclude_delimiter=True
+parsing_escape_sequences=True
