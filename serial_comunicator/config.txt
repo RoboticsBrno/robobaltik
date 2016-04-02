@@ -1,12 +1,12 @@
-Port=COM12
-baudrate=115200#prenosova rychlost
-TIMEOUT  =    2
-Endline=\n
-#address=localhost
-#port=12345
-readback=1
-readbuf=1024
-readfile=received_data.txt
-received_delimiter=\n
-exclude_delimiter=True
-parsing_escape_sequences=True
+address                  = localhost         # IP adresa/localhost - pouze pokud posilate pres TCP/IP, NEPOVINNE
+port                     = COM12             # pokud nemate adresu, musi byt ve tvaru COM.., POVINNE
+#port                    = 12345             # pokud mate zadanou adresu, musi byt cislo portu, na ktery se chcete pripojit
+baudrate                 = 115200            # prenosova rychlost, musi byt cislo, pouziva se pri port=COM.., NEPOVINNE - defaultni hodnota 115200
+parsing_escape_sequences = True              # musi byt 1/True - escape sekvence zapnuty; 0/False - vypnuty, NEPOVINNE - defaultni hodnota True 
+endline                  = \n                # znak/retezec, ktery se ulozi vzdy na konec radku, NEPOVINNE
+readback                 = 1                 # musi byt 1/True - data se do souboru ukladaji; 0/False - data se neukladaji, NEPOVINNE, defaultni hodnota False
+received_delimiter       = \n                # znak/retezec, na ktery se ceka pri prijmu dat, NEPOVINNE
+exclude_delimiter        = True              # musi byt 1/True - received_delimiter se ulozi; 0/False - neulozi, NEPOVINNE, defaultni hodnota False
+timeout                  = 2                 # musi byt cislo, ktere udava, jak dlouho se bude cekat na prijimana data, NEPOVINNE
+readfile                 = received_data.txt # adresa souboru, do ktereho bude pragram zapisovat data, NEPOVINNE, defaultni hodnota received_data.txt
+readbuf                  = 1024              # musi byt cislo, ktere reprezentuje max velikost bufferu v bytech, NEPOVINNE, defaultni hodnota 1024
