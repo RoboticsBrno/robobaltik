@@ -163,7 +163,7 @@ private:
 		{
 			format_spgm(uart, PSTR("% \n")) % pi::getLinePos();
 		}
-		else if(cmd.compare_spgm(PSTR("resetCalibration")) == 0)
+		else if(cmd.compare_spgm(PSTR("reset_calibration")) == 0)
 		{
 			pi::resetCalibration();
 		}
@@ -242,12 +242,7 @@ private:
 			else
 				format_spgm(uart, PSTR("% \n")) % grid_move.get_turn_time();
 		}
-// 		else if(cmd.compare_spgm(PSTR("time")) == 0)
-// 		{
-// 			grid_move_t::speed_t s = 0;
-// 			if(get_num(s))
-// 				grid_move.set_time(s);
-// 		}
+
 		else
 		{
 			format_spgm(uart, PSTR("Unknown command \"% \"")) % cmd;
