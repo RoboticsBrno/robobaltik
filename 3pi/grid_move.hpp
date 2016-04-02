@@ -63,14 +63,6 @@ public:
 		wait(m_turn_time * n);
 		setMotorPower(0, 0);
 	}
-	
-// 	void set_time(const speed_t& s)
-// 	{
-// 		m_vertical_time = msec(500) * (s + 1);
-// 		m_horizontal_time = msec(500) * (s + 1);
-// 		m_turn_time = msec(500) * (s + 1);
-// 		format(uart, "t = % \n") % m_vertical_time;
-// 	}
 
 	uint32_t get_horizonatal_time() const { return m_horizontal_time; }
 	uint32_t get_vertical_time() const { return m_turn_time; }
