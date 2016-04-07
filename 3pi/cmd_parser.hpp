@@ -1,11 +1,15 @@
 #ifndef CMD_PARSER_HPP
 #define CMD_PARSER_HPP
+#include <string.h>
+
+#define SENSORS_CALIBRATION_DEFAULT_EEPROM_ADDRESS 1010
+#define PARSING_ESCAPE_SEQUENCES_EEPROM_ADDRESS 1009
 
 class cmd_parser_t
 {
 public:
 	cmd_parser_t()
-		:m_esc(false), m_cmd(), m_rptr(0)
+		:m_esc(false), m_cmd(), m_rptr(0), m_parse_escape_sequence(pi::load_eeprom<uint8_t>(PARSING_ESCAPE_SEQUENCES_EEPROM_ADDRESS))
 	{}
 	
 	void push(const char& ch)
@@ -59,7 +63,77 @@ private:
 		string cmd = pop_arg();
 		if(cmd.compare_spgm(PSTR("disp")) == 0)
 		{
-			send(disp, m_cmd.substr(m_rptr));
+			string str = m_cmd.substr(m_rptr);
+			string::size_t length = str.length();
+			bool end = false;
+			bool hex_ch = false;
+			
+			if (m_parse_escape_sequence)
+			{
+				bool back_slash = false;
+				for (string::size_t i = 0; i < length; ++i)
+				{
+					if (str[i] == '\\' && !back_slash)
+					{
+						if (length <= (i + 1))
+						{
+							format_spgm(uart, PSTR("behind \"% \" is not char\n")) % str[i];
+							end = true;
+							break;
+						}
+						back_slash = true;
+						continue;
+					}
+					else if (back_slash)
+					{
+						switch(str[i])
+						{
+							case '\\': str[i] = '\\'; break;
+							case 'n': str[i] = '\n'; break;
+							case 'b': str[i] = '\b'; break;
+							case 'a': str[i] = '\a'; break;
+							case 'r': str[i] = '\r'; break;
+							case 'v': str[i] = '\v'; break;
+							case 'f': str[i] = '\f'; break;
+							case 't': str[i] = '\t'; break;
+							case 'x':
+								if (length <= (i + 2))
+								{
+									format_spgm(uart, PSTR("behind \"% \" is not char for make hex\n")) % str[i];
+									end = true;
+									break;
+								}
+								str[i] = 0;
+								hex_ch = true;
+								for (string::size_t j = (i + 1); j <= (i + 2); ++j)
+								{
+									switch(str[j])
+									{
+										case '1' ... '9': str[i] = (str[i]<<4) | (str[j] - '0'); break; //bitovy posun o 4 a logicky soucet
+										case 'A' ... 'F': str[i] = (str[i]<<4) | ((str[j] -'A') + 10); break;
+										default: end = true; format_spgm(uart, PSTR("\"% \" is not hex\n")) % str[j];						
+									}
+								}
+								break; 
+							default: end = true; format_spgm(uart, PSTR("\"% \" is not valid escape sequence\n")) % str[i];
+						}
+						back_slash = false;
+					}
+					if(!end)
+					{
+						disp.write(str[i]);
+					}
+					if (hex_ch)
+					{
+						hex_ch = false;
+						i += 2;
+					}
+				}
+			}
+			else
+			{
+				send(disp, m_cmd.substr(m_rptr));
+			}
 		}
 		else if(cmd.compare_spgm(PSTR("cursor")) == 0)
 		{
@@ -177,11 +251,31 @@ private:
 		}
 		else if(cmd.compare_spgm(PSTR("store_sensor_cal")) == 0)
 		{
-			pi::store_sensor_cal(get_num_opt<uint16_t>(0));
+			pi::store_sensor_cal(get_num_opt<uint16_t>(SENSORS_CALIBRATION_DEFAULT_EEPROM_ADDRESS));
 		}
 		else if(cmd.compare_spgm(PSTR("load_sensor_cal")) == 0)
 		{
-			pi::load_sensor_cal(get_num_opt<uint16_t>(0));
+			pi::load_sensor_cal(get_num_opt<uint16_t>(SENSORS_CALIBRATION_DEFAULT_EEPROM_ADDRESS));
+		}
+		else if(cmd.compare_spgm(PSTR("parse_escape_seq")) == 0)
+		{
+			if(m_rptr != m_cmd.length()){
+				switch(m_cmd[m_rptr]){
+					case '1':
+						m_parse_escape_sequence = true;
+						break;
+					
+					case '0':
+						m_parse_escape_sequence = false;
+						break;
+					default:
+						//if(!m_cmd.substr(m_rptr).empty())
+						format_spgm(uart, PSTR("wrong arg \"% \"")) % m_cmd.substr(m_rptr);
+						format_spgm(uart, PSTR(" for command \"% \"")) % cmd;
+						uart.write('\n');
+				}
+				pi::store_eeprom(PARSING_ESCAPE_SEQUENCES_EEPROM_ADDRESS, m_parse_escape_sequence);
+			}
 		}
 		else if(cmd.compare_spgm(PSTR("store_eeprom")) == 0)
 		{
@@ -291,6 +385,7 @@ private:
 	bool m_esc;
 	string m_cmd;
 	string::size_t m_rptr;
+	bool m_parse_escape_sequence;
 };
 
 #endif
